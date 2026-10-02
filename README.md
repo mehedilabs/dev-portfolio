@@ -13,17 +13,7 @@ I build digital products people want to use.
 </p>
 
 <p align="center">
-
-<a href="https://mehedi-dev-portfolio.vercel.app">Live Portfolio</a>
-
-•
-
-<a href="https://github.com/mehedilabs/mehedi-dev-portfolio">GitHub Repository</a>
-
-•
-
-<a href="https://www.linkedin.com/in/mehedilabs/">LinkedIn</a>
-
+  <a href="https://mehedi-dev-portfolio.vercel.app">Live Portfolio</a> • <a href="https://github.com/mehedilabs/mehedi-dev-portfolio">GitHub Repository</a> • <a href="https://www.linkedin.com/in/mehedilabs/">LinkedIn</a>
 </p>
 
 ---
@@ -74,6 +64,20 @@ https://mehedi-dev-portfolio.vercel.app
 - Smooth animations
 - Toast notifications
 - Production deployment with Vercel
+
+---
+
+## 🧩 What I Practiced
+
+While building this project, I practiced:
+
+- Structuring a responsive landing page
+- Creating reusable HTML sections
+- Building navigation and content sections
+- Using CSS for layout, spacing, and visual styling
+- Making the interface responsive across different screen sizes
+- Organizing a complete frontend project structure
+- Deploying a static website with GitHub Pages
 
 ---
 
