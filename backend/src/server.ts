@@ -3,7 +3,6 @@ import cors from "cors";
 import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
 
-
 import connectDB from "./config/db.js";
 
 import contactRoutes from "./routes/contactRoutes.js";
@@ -32,7 +31,8 @@ app.use(
   }),
 );
 
-app.use(express.json());
+app.use(express.json({ limit: "15mb" }));
+app.use(express.urlencoded({ extended: true, limit: "15mb" }));
 app.use(cookieParser());
 
 app.get("/", (_req, res) => {

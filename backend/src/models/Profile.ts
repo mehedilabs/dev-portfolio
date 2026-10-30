@@ -47,6 +47,17 @@ const profileSchema = new Schema(
       default: "",
     },
 
+    resumeEnabled: {
+      type: Boolean,
+      default: true,
+    },
+
+    resumeType: {
+      type: String,
+      enum: ["url", "pdf"],
+      default: "url",
+    },
+
     email: {
       type: String,
       required: true,

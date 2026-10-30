@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { FiSave } from "react-icons/fi";
+import { useEffect, useState, useRef } from "react";
+import { FiSave, FiUpload, FiFileText, FiExternalLink, FiTrash2 } from "react-icons/fi";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -14,6 +14,8 @@ interface ProfileData {
   available: boolean;
   profileImage: string;
   resumeUrl: string;
+  resumeEnabled?: boolean;
+  resumeType?: "url" | "pdf";
   email: string;
   phone: string;
   whatsapp: string;
@@ -31,6 +33,8 @@ const AdminProfile = () => {
     available: false,
     profileImage: "",
     resumeUrl: "",
+    resumeEnabled: true,
+    resumeType: "url",
     email: "",
     phone: "",
     whatsapp: "",
@@ -40,23 +44,41 @@ const AdminProfile = () => {
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [pdfFileName, setPdfFileName] = useState<string>("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const loadProfile = async () => {
       try {
-        const response = await fetch(
-          `${API_URL}/profile`,
-        );
-
+        const response = await fetch(`${API_URL}/profile`);
         const data = await response.json();
 
         if (!response.ok) {
-          throw new Error(
-            data.message || "Failed to load profile",
-          );
+          throw new Error(data.message || "Failed to load profile");
         }
 
-        setProfile(data);
+        const profileData = data.profile ?? data;
+        setProfile({
+          name: profileData.name || "",
+          jobTitle: profileData.jobTitle || "",
+          tagline: profileData.tagline || "",
+          description: profileData.description || "",
+          location: profileData.location || "",
+          available: Boolean(profileData.available),
+          profileImage: profileData.profileImage || "",
+          resumeUrl: profileData.resumeUrl || "",
+          resumeEnabled: profileData.resumeEnabled !== false,
+          resumeType: profileData.resumeType || (profileData.resumeUrl?.startsWith("data:") ? "pdf" : "url"),
+          email: profileData.email || "",
+          phone: profileData.phone || "",
+          whatsapp: profileData.whatsapp || "",
+          github: profileData.github || "",
+          linkedin: profileData.linkedin || "",
+        });
+
+        if (profileData.resumeUrl?.startsWith("data:application/pdf")) {
+          setPdfFileName("uploaded-resume.pdf");
+        }
       } catch (error) {
         if (error instanceof Error) {
           toast.error(error.message);
@@ -93,6 +115,65 @@ const AdminProfile = () => {
     }));
   };
 
+  const handleResumeEnabledChange = (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    setProfile((previousProfile) => ({
+      ...previousProfile,
+      resumeEnabled: event.target.checked,
+    }));
+  };
+
+  const handleResumeTypeChange = (type: "url" | "pdf") => {
+    setProfile((previousProfile) => ({
+      ...previousProfile,
+      resumeType: type,
+    }));
+  };
+
+  const handlePdfUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
+      toast.error("Please select a valid PDF file");
+      return;
+    }
+
+    // Limit to 10MB
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("PDF file size must be less than 10MB");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const base64 = reader.result as string;
+      setProfile((prev) => ({
+        ...prev,
+        resumeUrl: base64,
+        resumeType: "pdf",
+      }));
+      setPdfFileName(file.name);
+      toast.success(`PDF "${file.name}" loaded successfully. Click Save Changes to save.`);
+    };
+    reader.onerror = () => {
+      toast.error("Failed to read the PDF file");
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleClearResume = () => {
+    setProfile((prev) => ({
+      ...prev,
+      resumeUrl: "",
+    }));
+    setPdfFileName("");
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
   const handleSubmit = async (
     event: React.FormEvent<HTMLFormElement>,
   ) => {
@@ -101,17 +182,14 @@ const AdminProfile = () => {
     try {
       setSaving(true);
 
-      const response = await fetch(
-        `${API_URL}/profile`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          credentials: "include",
-          body: JSON.stringify(profile),
+      const response = await fetch(`${API_URL}/profile`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
         },
-      );
+        credentials: "include",
+        body: JSON.stringify(profile),
+      });
 
       const data = await response.json();
 
@@ -121,14 +199,11 @@ const AdminProfile = () => {
           return;
         }
 
-        throw new Error(
-          data.message || "Profile update failed",
-        );
+        throw new Error(data.message || "Profile update failed");
       }
 
       setProfile(data.profile);
-
-      toast.success("Profile updated successfully!");
+      toast.success("Profile & Resume updated successfully!");
     } catch (error) {
       if (error instanceof Error) {
         toast.error(error.message);
@@ -145,10 +220,7 @@ const AdminProfile = () => {
       <main className="flex min-h-screen items-center justify-center bg-[#050505] text-white">
         <div className="text-center">
           <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-white" />
-
-          <p className="mt-4 text-sm text-gray-500">
-            Loading profile...
-          </p>
+          <p className="mt-4 text-sm text-gray-500">Loading profile...</p>
         </div>
       </main>
     );
@@ -157,33 +229,30 @@ const AdminProfile = () => {
   return (
     <main className="min-h-screen bg-[#050505] px-5 py-8 text-white md:px-8">
       <div className="mx-auto max-w-5xl">
-        <div className="mb-8">
-          <p className="text-sm text-gray-500">
-            Portfolio Management
-          </p>
+        <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <p className="text-sm text-gray-500">Portfolio Management</p>
+            <h1 className="mt-1 text-3xl font-bold">Profile Management</h1>
+            <p className="mt-2 text-sm text-gray-500">
+              Update the information and resume displayed across your portfolio.
+            </p>
+          </div>
 
-          <h1 className="mt-1 text-3xl font-bold">
-            Profile Management
-          </h1>
-
-          <p className="mt-2 text-sm text-gray-500">
-            Update the information displayed across your
-            portfolio.
-          </p>
+          <a
+            href="/admin/dashboard"
+            className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-gray-300 transition hover:bg-white/10"
+          >
+            ← Back to Dashboard
+          </a>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-6">
-            <h2 className="text-lg font-semibold">
-              Basic Information
-            </h2>
+            <h2 className="text-lg font-semibold">Basic Information</h2>
 
             <div className="mt-5 grid gap-5 md:grid-cols-2">
               <div>
-                <label className="mb-2 block text-sm text-gray-400">
-                  Name
-                </label>
-
+                <label className="mb-2 block text-sm text-gray-400">Name</label>
                 <input
                   type="text"
                   name="name"
@@ -195,10 +264,7 @@ const AdminProfile = () => {
               </div>
 
               <div>
-                <label className="mb-2 block text-sm text-gray-400">
-                  Job Title
-                </label>
-
+                <label className="mb-2 block text-sm text-gray-400">Job Title</label>
                 <input
                   type="text"
                   name="jobTitle"
@@ -210,10 +276,7 @@ const AdminProfile = () => {
               </div>
 
               <div className="md:col-span-2">
-                <label className="mb-2 block text-sm text-gray-400">
-                  Tagline
-                </label>
-
+                <label className="mb-2 block text-sm text-gray-400">Tagline</label>
                 <input
                   type="text"
                   name="tagline"
@@ -225,10 +288,7 @@ const AdminProfile = () => {
               </div>
 
               <div className="md:col-span-2">
-                <label className="mb-2 block text-sm text-gray-400">
-                  Description
-                </label>
-
+                <label className="mb-2 block text-sm text-gray-400">Description</label>
                 <textarea
                   name="description"
                   value={profile.description}
@@ -240,10 +300,7 @@ const AdminProfile = () => {
               </div>
 
               <div>
-                <label className="mb-2 block text-sm text-gray-400">
-                  Location
-                </label>
-
+                <label className="mb-2 block text-sm text-gray-400">Location</label>
                 <input
                   type="text"
                   name="location"
@@ -260,26 +317,21 @@ const AdminProfile = () => {
                     type="checkbox"
                     checked={profile.available}
                     onChange={handleAvailableChange}
-                    className="h-4 w-4"
+                    className="h-4 w-4 rounded border-white/20 bg-black/40 text-cyan-400 focus:ring-cyan-400"
                   />
-
                   Available for work
                 </label>
               </div>
             </div>
           </section>
 
+          {/* Profile Image & Resume Management */}
           <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-6">
-            <h2 className="text-lg font-semibold">
-              Profile & Resume
-            </h2>
+            <h2 className="text-lg font-semibold">Profile Image & Resume Management</h2>
 
-            <div className="mt-5 grid gap-5 md:grid-cols-2">
+            <div className="mt-5 space-y-6">
               <div>
-                <label className="mb-2 block text-sm text-gray-400">
-                  Profile Image URL
-                </label>
-
+                <label className="mb-2 block text-sm text-gray-400">Profile Image URL</label>
                 <input
                   type="url"
                   name="profileImage"
@@ -290,34 +342,136 @@ const AdminProfile = () => {
                 />
               </div>
 
-              <div>
-                <label className="mb-2 block text-sm text-gray-400">
-                  Resume URL
-                </label>
+              <div className="rounded-xl border border-white/10 bg-black/20 p-5">
+                <div className="flex flex-wrap items-center justify-between gap-4">
+                  <div>
+                    <h3 className="text-base font-semibold text-white">Resume Settings</h3>
+                    <p className="text-xs text-gray-400">
+                      Enable or disable resume visibility and provide a direct PDF or Google Drive URL.
+                    </p>
+                  </div>
 
-                <input
-                  type="url"
-                  name="resumeUrl"
-                  value={profile.resumeUrl}
-                  onChange={handleChange}
-                  placeholder="https://..."
-                  className="admin-input"
-                />
+                  <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-gray-200">
+                    <input
+                      type="checkbox"
+                      checked={profile.resumeEnabled !== false}
+                      onChange={handleResumeEnabledChange}
+                      className="h-4 w-4 rounded border-white/20 bg-black/40 text-cyan-400 focus:ring-cyan-400"
+                    />
+                    Enable Resume on Public Portfolio
+                  </label>
+                </div>
+
+                <div className="mt-4 flex gap-2 border-b border-white/10 pb-3">
+                  <button
+                    type="button"
+                    onClick={() => handleResumeTypeChange("url")}
+                    className={`rounded-lg px-4 py-2 text-xs font-semibold transition ${
+                      profile.resumeType !== "pdf"
+                        ? "bg-white text-black"
+                        : "border border-white/10 bg-white/5 text-gray-300 hover:bg-white/10"
+                    }`}
+                  >
+                    Google Drive / External URL
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleResumeTypeChange("pdf")}
+                    className={`rounded-lg px-4 py-2 text-xs font-semibold transition ${
+                      profile.resumeType === "pdf"
+                        ? "bg-white text-black"
+                        : "border border-white/10 bg-white/5 text-gray-300 hover:bg-white/10"
+                    }`}
+                  >
+                    Upload PDF Document
+                  </button>
+                </div>
+
+                {profile.resumeType !== "pdf" ? (
+                  <div className="mt-4">
+                    <label className="mb-2 block text-sm text-gray-400">
+                      Google Drive or Cloud PDF URL
+                    </label>
+                    <input
+                      type="url"
+                      name="resumeUrl"
+                      value={profile.resumeUrl}
+                      onChange={handleChange}
+                      placeholder="https://drive.google.com/file/d/.../view or direct link"
+                      className="admin-input"
+                    />
+                    <p className="mt-1 text-xs text-gray-500">
+                      If using Google Drive, make sure link sharing is set to "Anyone with the link can view".
+                    </p>
+                  </div>
+                ) : (
+                  <div className="mt-4 space-y-3">
+                    <label className="block text-sm text-gray-400">Upload PDF File</label>
+                    <div className="flex flex-wrap items-center gap-3">
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="application/pdf"
+                        onChange={handlePdfUpload}
+                        className="hidden"
+                        id="resume-file-input"
+                      />
+                      <label
+                        htmlFor="resume-file-input"
+                        className="flex cursor-pointer items-center gap-2 rounded-xl border border-cyan-400/30 bg-cyan-400/10 px-4 py-2.5 text-xs font-semibold text-cyan-300 transition hover:bg-cyan-400/20"
+                      >
+                        <FiUpload size={14} />
+                        Choose PDF Document
+                      </label>
+
+                      {profile.resumeUrl ? (
+                        <div className="flex items-center gap-2 text-xs text-gray-300">
+                          <FiFileText className="text-cyan-400" />
+                          <span>{pdfFileName || "PDF Loaded (Ready to save)"}</span>
+                          <button
+                            type="button"
+                            onClick={handleClearResume}
+                            className="ml-2 text-red-400 hover:text-red-300"
+                            title="Remove resume"
+                          >
+                            <FiTrash2 size={14} />
+                          </button>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-gray-500">No PDF selected</span>
+                      )}
+                    </div>
+                    <p className="text-xs text-gray-500">
+                      Accepted format: .pdf (Max size 10MB).
+                    </p>
+                  </div>
+                )}
+
+                {/* Preview Link if resume exists */}
+                {profile.resumeUrl && (
+                  <div className="mt-4 flex items-center gap-3 rounded-lg border border-white/5 bg-white/[0.02] p-3">
+                    <span className="text-xs text-gray-400">Current Resume:</span>
+                    <a
+                      href={profile.resumeUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-xs font-semibold text-cyan-400 hover:underline"
+                    >
+                      <FiExternalLink size={12} />
+                      Test / Open Resume in new tab
+                    </a>
+                  </div>
+                )}
               </div>
             </div>
           </section>
 
           <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-6">
-            <h2 className="text-lg font-semibold">
-              Contact Information
-            </h2>
+            <h2 className="text-lg font-semibold">Contact Information</h2>
 
             <div className="mt-5 grid gap-5 md:grid-cols-2">
               <div>
-                <label className="mb-2 block text-sm text-gray-400">
-                  Email
-                </label>
-
+                <label className="mb-2 block text-sm text-gray-400">Email</label>
                 <input
                   type="email"
                   name="email"
@@ -329,10 +483,7 @@ const AdminProfile = () => {
               </div>
 
               <div>
-                <label className="mb-2 block text-sm text-gray-400">
-                  Phone
-                </label>
-
+                <label className="mb-2 block text-sm text-gray-400">Phone</label>
                 <input
                   type="text"
                   name="phone"
@@ -343,10 +494,7 @@ const AdminProfile = () => {
               </div>
 
               <div>
-                <label className="mb-2 block text-sm text-gray-400">
-                  WhatsApp
-                </label>
-
+                <label className="mb-2 block text-sm text-gray-400">WhatsApp</label>
                 <input
                   type="url"
                   name="whatsapp"
@@ -359,16 +507,11 @@ const AdminProfile = () => {
           </section>
 
           <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-6">
-            <h2 className="text-lg font-semibold">
-              Social Links
-            </h2>
+            <h2 className="text-lg font-semibold">Social Links</h2>
 
             <div className="mt-5 grid gap-5 md:grid-cols-2">
               <div>
-                <label className="mb-2 block text-sm text-gray-400">
-                  GitHub
-                </label>
-
+                <label className="mb-2 block text-sm text-gray-400">GitHub</label>
                 <input
                   type="url"
                   name="github"
@@ -379,10 +522,7 @@ const AdminProfile = () => {
               </div>
 
               <div>
-                <label className="mb-2 block text-sm text-gray-400">
-                  LinkedIn
-                </label>
-
+                <label className="mb-2 block text-sm text-gray-400">LinkedIn</label>
                 <input
                   type="url"
                   name="linkedin"
@@ -401,17 +541,13 @@ const AdminProfile = () => {
               className="flex items-center gap-2 rounded-xl bg-white px-6 py-3 font-semibold text-black transition hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <FiSave size={18} />
-
               {saving ? "Saving..." : "Save Changes"}
             </button>
           </div>
         </form>
       </div>
 
-      <ToastContainer
-        position="bottom-right"
-        theme="dark"
-      />
+      <ToastContainer position="bottom-right" theme="dark" />
     </main>
   );
 };

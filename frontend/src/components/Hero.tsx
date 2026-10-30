@@ -20,7 +20,11 @@ import {
 import API_URL from "../config/api";
 import defaultProfileImage from "../assets/profile.png";
 
-type ProfileData = typeof defaultProfile;
+type ProfileData = typeof defaultProfile & {
+  jobTitle?: string;
+  resumeUrl?: string;
+  resumeEnabled?: boolean;
+};
 
 const Hero = () => {
   const [greetingIndex, setGreetingIndex] = useState(0);
@@ -63,90 +67,102 @@ const Hero = () => {
       }
     };
 
-    fetchProfile();
-  }, []);
-
-  useEffect(() => {
-    const fetchStats = async () => {
+    const fetchProjects = async () => {
       try {
-        const [projectResponse, statsResponse] =
-          await Promise.all([
-            fetch(`${API_URL}/projects/count`),
-            fetch(`${API_URL}/stats`),
-          ]);
+        const response = await fetch(
+          `${API_URL}/projects/count`,
+        );
 
-        if (projectResponse.ok) {
-          const projectData = await projectResponse.json();
-
-          setProjectCount(projectData.count);
+        if (!response.ok) {
+          return;
         }
 
-        if (statsResponse.ok) {
-          const statsData = await statsResponse.json();
+        const data = await response.json();
 
-          setExperience(statsData.experience);
-          setClients(statsData.clients);
-        }
+        setProjectCount(data.count);
       } catch (error) {
-        console.error("Portfolio stats error:", error);
+        console.error("Project count fetch error:", error);
       }
     };
 
+    const fetchStats = async () => {
+      try {
+        const response = await fetch(`${API_URL}/stats`);
+
+        if (!response.ok) {
+          return;
+        }
+
+        const data = await response.json();
+
+        setExperience(data.experience);
+        setClients(data.clients);
+      } catch (error) {
+        console.error("Stats fetch error:", error);
+      }
+    };
+
+    fetchProfile();
+    fetchProjects();
     fetchStats();
   }, []);
+
+  const rawResume = profile.resumeUrl?.trim() || (profile.resume && profile.resume !== "#" ? profile.resume.trim() : "");
+  const hasValidResume = Boolean(profile.resumeEnabled !== false && rawResume && rawResume !== "#");
+  const resumeLink = rawResume;
 
   return (
     <section
       id="home"
-      className="relative flex min-h-screen items-center overflow-hidden pt-24"
+      className="relative flex min-h-screen items-center justify-center overflow-hidden pt-28 pb-16 md:pt-36 md:pb-24"
     >
-      {/* Background glow */}
-      <div className="pointer-events-none absolute left-1/2 top-1/3 h-96 w-96 -translate-x-1/2 rounded-full bg-violet-500/10 blur-[140px]" />
+      {/* Background glowing effects */}
+      <div className="pointer-events-none absolute -top-40 -left-40 h-96 w-96 rounded-full bg-cyan-500/10 blur-[120px]" />
+      <div className="pointer-events-none absolute -bottom-40 -right-40 h-96 w-96 rounded-full bg-blue-500/10 blur-[120px]" />
 
       <div className="section-container relative z-10">
-        <div className="grid items-center gap-16 lg:grid-cols-[1.05fr_0.95fr]">
-          {/* Left Content */}
+        <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
+          {/* Left Hero Content */}
           <motion.div
             initial={{ opacity: 0, x: -40 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8 }}
+            className="flex flex-col items-start"
           >
-            {/* Availability */}
-            <div className="mb-7 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-gray-300 backdrop-blur-xl">
-              <span className="relative flex h-2.5 w-2.5">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75" />
-                <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-green-400" />
+            {/* Status badge */}
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs text-gray-300 backdrop-blur-xl">
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-cyan-400 opacity-75" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-cyan-400" />
               </span>
 
-              Available for opportunities
+              <span>
+                Available for freelance & full-time roles
+              </span>
             </div>
 
-            {/* Greeting */}
-            <motion.p
-              key={greetingIndex}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mb-4 text-lg font-medium text-gray-400"
-            >
-              {greetings[greetingIndex]}
-            </motion.p>
+            {/* Dynamic Greeting */}
+            <div className="mt-6 h-8">
+              <span className="text-sm font-semibold tracking-wider text-cyan-400 uppercase">
+                {greetings[greetingIndex]}
+              </span>
+            </div>
 
-            {/* Name */}
-            <h1 className="max-w-4xl text-4xl font-black leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl">
-              <span className="block">I'm</span>
-
-              <span className="block gradient-text">
+            {/* Main Title */}
+            <h1 className="mt-2 text-4xl font-extrabold tracking-tight sm:text-6xl lg:text-7xl">
+              I'm{" "}
+              <span className="gradient-text">
                 {profile.name}
               </span>
             </h1>
 
             {/* Role */}
-            <h2 className="mt-5 text-2xl font-bold text-white sm:text-3xl">
-              {profile.role}
+            <h2 className="mt-3 text-lg font-medium text-gray-400 sm:text-2xl">
+              {profile.jobTitle || profile.role}
             </h2>
 
-            {/* Description */}
-            <p className="mt-6 max-w-2xl text-base leading-8 text-gray-400 sm:text-lg">
+            {/* Bio */}
+            <p className="mt-6 max-w-xl text-sm leading-relaxed text-gray-400 sm:text-base">
               I build modern, responsive and user-friendly web
               applications with clean code and thoughtful
               experiences.
@@ -165,7 +181,6 @@ const Hero = () => {
                 className="group inline-flex items-center gap-2 rounded-full bg-white px-6 py-3.5 text-sm font-semibold text-black transition duration-300 hover:scale-105 hover:bg-[#b2effa]"
               >
                 View My Work
-
                 <FiArrowUpRight className="transition-transform duration-300 group-hover:translate-x-1 group-hover:-translate-y-1" />
               </a>
 
@@ -175,6 +190,17 @@ const Hero = () => {
               >
                 Let's Talk
               </a>
+
+              {hasValidResume && (
+                <a
+                  href={resumeLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="sm:hidden inline-flex items-center gap-2 rounded-full border border-cyan-400/30 bg-cyan-400/10 px-6 py-3.5 text-sm font-semibold text-cyan-300 backdrop-blur-xl transition duration-300 hover:bg-cyan-400 hover:text-black"
+                >
+                  Resume <FiArrowUpRight />
+                </a>
+              )}
             </div>
 
             {/* Social Links */}
@@ -290,13 +316,17 @@ const Hero = () => {
               </div>
             </motion.div>
 
-            {/* Resume card */}
-            <a
-              href={profile.resume}
-              className="absolute -bottom-5 -right-3 hidden rounded-full border border-white/10 bg-white px-5 py-3 text-xs font-bold text-black shadow-xl transition duration-300 hover:scale-105 hover:bg-[#b2effa] sm:block"
-            >
-              Resume <FiArrowUpRight className="ml-1 inline" />
-            </a>
+            {/* Dynamic Resume card in Hero */}
+            {hasValidResume && (
+              <a
+                href={resumeLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="absolute -bottom-5 right-0 sm:-right-3 rounded-full border border-white/10 bg-white px-5 py-3 text-xs font-bold text-black shadow-xl transition duration-300 hover:scale-105 hover:bg-[#b2effa] flex items-center"
+              >
+                Resume <FiArrowUpRight className="ml-1 inline" />
+              </a>
+            )}
           </motion.div>
         </div>
 
