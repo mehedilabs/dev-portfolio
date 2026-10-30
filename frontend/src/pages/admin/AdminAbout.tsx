@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { toast } from "react-toastify";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 import API_URL from "../../config/api";
 
@@ -14,6 +15,12 @@ type AboutData = {
   title: string;
   mainHeading: string;
   paragraphs: string[];
+  journeyTitle: string;
+  journey: string;
+  interestsTitle: string;
+  interests: string[];
+  hobbiesTitle: string;
+  hobbies: string[];
   techStackLabel: string;
   techStack: string[];
   ctaText: string;
@@ -28,6 +35,12 @@ const emptyAbout: AboutData = {
   title: "",
   mainHeading: "",
   paragraphs: ["", "", ""],
+  journeyTitle: "Programming Journey",
+  journey: "",
+  interestsTitle: "Professional Interests",
+  interests: [],
+  hobbiesTitle: "Hobbies & Personal Interests",
+  hobbies: [],
   techStackLabel: "",
   techStack: [],
   ctaText: "",
@@ -40,6 +53,8 @@ const emptyAbout: AboutData = {
 const AdminAbout = () => {
   const [about, setAbout] = useState<AboutData>(emptyAbout);
   const [newTechnology, setNewTechnology] = useState("");
+  const [newInterest, setNewInterest] = useState("");
+  const [newHobby, setNewHobby] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -64,6 +79,12 @@ const AdminAbout = () => {
           title: data.title || "",
           mainHeading: data.mainHeading || "",
           paragraphs: data.paragraphs || ["", "", ""],
+          journeyTitle: data.journeyTitle || "Programming Journey",
+          journey: data.journey || "",
+          interestsTitle: data.interestsTitle || "Professional Interests",
+          interests: data.interests || [],
+          hobbiesTitle: data.hobbiesTitle || "Hobbies & Personal Interests",
+          hobbies: data.hobbies || [],
           techStackLabel: data.techStackLabel || "",
           techStack: data.techStack || [],
           ctaText: data.ctaText || "",
@@ -98,72 +119,88 @@ const AdminAbout = () => {
     value: string,
   ) => {
     setAbout((current) => {
-      const paragraphs = [...current.paragraphs];
-
-      paragraphs[index] = value;
+      const nextParagraphs = [...current.paragraphs];
+      nextParagraphs[index] = value;
 
       return {
         ...current,
-        paragraphs,
+        paragraphs: nextParagraphs,
       };
     });
   };
 
-  const addTechnology = () => {
-    const technology = newTechnology.trim();
+  const handleAddTechnology = () => {
+    const trimmed = newTechnology.trim();
 
-    if (!technology) {
+    if (!trimmed) {
       return;
     }
 
-    if (
-      about.techStack.some(
-        (item) =>
-          item.toLowerCase() === technology.toLowerCase(),
-      )
-    ) {
-      toast.info("Technology already exists");
+    if (about.techStack.includes(trimmed)) {
+      toast.error("Technology already added");
       return;
     }
 
     setAbout((current) => ({
       ...current,
-      techStack: [...current.techStack, technology],
+      techStack: [...current.techStack, trimmed],
     }));
 
     setNewTechnology("");
   };
 
-  const removeTechnology = (index: number) => {
+  const handleRemoveTechnology = (technologyToRemove: string) => {
     setAbout((current) => ({
       ...current,
       techStack: current.techStack.filter(
-        (_, itemIndex) => itemIndex !== index,
+        (technology) => technology !== technologyToRemove,
       ),
     }));
   };
 
-  const updateWhatIBring = (
-    index: number,
-    field: keyof WhatIBringItem,
-    value: string,
-  ) => {
-    setAbout((current) => {
-      const items = [...current.whatIBring];
-
-      items[index] = {
-        ...items[index],
-        [field]: value,
-      };
-
-      return {
-        ...current,
-        whatIBring: items,
-      };
-    });
+  const handleAddInterest = () => {
+    const trimmed = newInterest.trim();
+    if (!trimmed) return;
+    if (about.interests.includes(trimmed)) {
+      toast.error("Interest already added");
+      return;
+    }
+    setAbout((current) => ({
+      ...current,
+      interests: [...current.interests, trimmed],
+    }));
+    setNewInterest("");
   };
 
-  const addWhatIBring = () => {
+  const handleRemoveInterest = (itemToRemove: string) => {
+    setAbout((current) => ({
+      ...current,
+      interests: current.interests.filter((item) => item !== itemToRemove),
+    }));
+  };
+
+  const handleAddHobby = () => {
+    const trimmed = newHobby.trim();
+    if (!trimmed) return;
+    if (about.hobbies.includes(trimmed)) {
+      toast.error("Hobby already added");
+      return;
+    }
+    setAbout((current) => ({
+      ...current,
+      hobbies: [...current.hobbies, trimmed],
+    }));
+    setNewHobby("");
+  };
+
+  const handleRemoveHobby = (itemToRemove: string) => {
+    setAbout((current) => ({
+      ...current,
+      hobbies: current.hobbies.filter((item) => item !== itemToRemove),
+    }));
+  };
+
+  const handleAddWhatIBring = () => {
     setAbout((current) => ({
       ...current,
       whatIBring: [
@@ -177,13 +214,33 @@ const AdminAbout = () => {
     }));
   };
 
-  const removeWhatIBring = (index: number) => {
+  const handleRemoveWhatIBring = (indexToRemove: number) => {
     setAbout((current) => ({
       ...current,
       whatIBring: current.whatIBring.filter(
-        (_, itemIndex) => itemIndex !== index,
+        (_, index) => index !== indexToRemove,
       ),
     }));
+  };
+
+  const updateWhatIBring = (
+    index: number,
+    field: keyof WhatIBringItem,
+    value: string,
+  ) => {
+    setAbout((current) => {
+      const nextItems = [...current.whatIBring];
+
+      nextItems[index] = {
+        ...nextItems[index],
+        [field]: value,
+      };
+
+      return {
+        ...current,
+        whatIBring: nextItems,
+      };
+    });
   };
 
   const handleSave = async () => {
@@ -257,8 +314,7 @@ const AdminAbout = () => {
           </h1>
 
           <p className="mt-2 text-sm text-gray-500">
-            Update the content displayed in your public About
-            section.
+            Update the content displayed in your public About section.
           </p>
         </div>
 
@@ -354,6 +410,175 @@ const AdminAbout = () => {
             </div>
           </section>
 
+          {/* Programming Journey */}
+          <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 sm:p-6">
+            <h2 className="text-lg font-semibold">
+              Programming Journey
+            </h2>
+            <p className="mt-1 text-xs text-gray-500">
+              Share how you got into coding, your milestones, and your evolution as a developer.
+            </p>
+
+            <div className="mt-5 space-y-4">
+              <div>
+                <label className="mb-2 block text-sm text-gray-400">
+                  Journey Section Title
+                </label>
+                <input
+                  value={about.journeyTitle}
+                  onChange={(event) =>
+                    updateField("journeyTitle", event.target.value)
+                  }
+                  className="admin-input"
+                  placeholder="Programming Journey"
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm text-gray-400">
+                  Journey Story / Description
+                </label>
+                <textarea
+                  value={about.journey}
+                  onChange={(event) =>
+                    updateField("journey", event.target.value)
+                  }
+                  rows={6}
+                  className="admin-input resize-none"
+                  placeholder="Describe how you started coding, key challenges overcome, and where you are today..."
+                />
+              </div>
+            </div>
+          </section>
+
+          {/* Professional Interests & Hobbies */}
+          <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 sm:p-6">
+            <h2 className="text-lg font-semibold">
+              Professional Interests & Hobbies
+            </h2>
+            <p className="mt-1 text-xs text-gray-500">
+              Showcase technical domains you're excited about and what you enjoy in your spare time.
+            </p>
+
+            <div className="mt-5 space-y-6">
+              {/* Professional Interests */}
+              <div>
+                <label className="mb-2 block text-sm text-gray-400">
+                  Interests Section Title
+                </label>
+                <input
+                  value={about.interestsTitle}
+                  onChange={(event) =>
+                    updateField("interestsTitle", event.target.value)
+                  }
+                  className="admin-input"
+                  placeholder="Professional Interests"
+                />
+
+                <div className="mt-3 flex gap-2">
+                  <input
+                    value={newInterest}
+                    onChange={(event) => setNewInterest(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") {
+                        event.preventDefault();
+                        handleAddInterest();
+                      }
+                    }}
+                    placeholder="e.g. Distributed Systems, UI/UX Architecture, Open Source"
+                    className="admin-input flex-1"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddInterest}
+                    className="rounded-xl border border-cyan-400/30 bg-cyan-400/10 px-4 py-2 text-xs font-semibold text-cyan-300 transition hover:bg-cyan-400/20"
+                  >
+                    Add Interest
+                  </button>
+                </div>
+
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {about.interests.map((interest) => (
+                    <span
+                      key={interest}
+                      className="inline-flex items-center gap-2 rounded-lg border border-cyan-400/20 bg-cyan-400/5 px-3 py-1.5 text-xs text-cyan-200"
+                    >
+                      {interest}
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveInterest(interest)}
+                        className="text-gray-400 hover:text-red-400"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                  {about.interests.length === 0 && (
+                    <span className="text-xs text-gray-500">No professional interests added yet.</span>
+                  )}
+                </div>
+              </div>
+
+              {/* Hobbies */}
+              <div className="border-t border-white/5 pt-4">
+                <label className="mb-2 block text-sm text-gray-400">
+                  Hobbies Section Title
+                </label>
+                <input
+                  value={about.hobbiesTitle}
+                  onChange={(event) =>
+                    updateField("hobbiesTitle", event.target.value)
+                  }
+                  className="admin-input"
+                  placeholder="Hobbies & Personal Interests"
+                />
+
+                <div className="mt-3 flex gap-2">
+                  <input
+                    value={newHobby}
+                    onChange={(event) => setNewHobby(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") {
+                        event.preventDefault();
+                        handleAddHobby();
+                      }
+                    }}
+                    placeholder="e.g. Photography, Reading Philosophy, Chess"
+                    className="admin-input flex-1"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddHobby}
+                    className="rounded-xl border border-violet-400/30 bg-violet-400/10 px-4 py-2 text-xs font-semibold text-violet-300 transition hover:bg-violet-400/20"
+                  >
+                    Add Hobby
+                  </button>
+                </div>
+
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {about.hobbies.map((hobby) => (
+                    <span
+                      key={hobby}
+                      className="inline-flex items-center gap-2 rounded-lg border border-violet-400/20 bg-violet-400/5 px-3 py-1.5 text-xs text-violet-200"
+                    >
+                      {hobby}
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveHobby(hobby)}
+                        className="text-gray-400 hover:text-red-400"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                  {about.hobbies.length === 0 && (
+                    <span className="text-xs text-gray-500">No hobbies added yet.</span>
+                  )}
+                </div>
+              </div>
+            </div>
+          </section>
+
           {/* Technology Stack */}
           <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 sm:p-6">
             <h2 className="text-lg font-semibold">
@@ -378,7 +603,7 @@ const AdminAbout = () => {
               />
             </div>
 
-            <div className="mt-5 flex gap-2">
+            <div className="mt-4 flex gap-2">
               <input
                 value={newTechnology}
                 onChange={(event) =>
@@ -387,56 +612,54 @@ const AdminAbout = () => {
                 onKeyDown={(event) => {
                   if (event.key === "Enter") {
                     event.preventDefault();
-                    addTechnology();
+                    handleAddTechnology();
                   }
                 }}
-                className="admin-input"
-                placeholder="Add technology"
+                className="admin-input flex-1"
+                placeholder="Add technology (e.g. React, Node.js)"
               />
 
               <button
                 type="button"
-                onClick={addTechnology}
-                className="shrink-0 rounded-xl bg-white px-5 text-sm font-semibold text-black transition hover:bg-gray-200"
+                onClick={handleAddTechnology}
+                className="rounded-xl bg-white px-4 py-2 text-sm font-semibold text-black transition hover:bg-gray-200"
               >
                 Add
               </button>
             </div>
 
             <div className="mt-4 flex flex-wrap gap-2">
-              {about.techStack.map(
-                (technology, index) => (
-                  <div
-                    key={`${technology}-${index}`}
-                    className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-sm text-gray-300"
-                  >
-                    <span>{technology}</span>
+              {about.techStack.map((technology) => (
+                <span
+                  key={technology}
+                  className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-gray-300"
+                >
+                  {technology}
 
-                    <button
-                      type="button"
-                      onClick={() =>
-                        removeTechnology(index)
-                      }
-                      className="text-gray-500 transition hover:text-white"
-                    >
-                      ×
-                    </button>
-                  </div>
-                ),
-              )}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleRemoveTechnology(technology)
+                    }
+                    className="text-gray-500 transition hover:text-red-400"
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
             </div>
           </section>
 
-          {/* CTA */}
+          {/* Call to Action */}
           <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 sm:p-6">
             <h2 className="text-lg font-semibold">
-              Call To Action
+              Call to Action
             </h2>
 
             <div className="mt-5 grid gap-5 sm:grid-cols-2">
               <div>
                 <label className="mb-2 block text-sm text-gray-400">
-                  Button Text
+                  CTA Text
                 </label>
 
                 <input
@@ -448,13 +671,13 @@ const AdminAbout = () => {
                     )
                   }
                   className="admin-input"
-                  placeholder="Let's work together"
+                  placeholder="Get in touch"
                 />
               </div>
 
               <div>
                 <label className="mb-2 block text-sm text-gray-400">
-                  Button Link
+                  CTA Link
                 </label>
 
                 <input
@@ -474,31 +697,24 @@ const AdminAbout = () => {
 
           {/* What I Bring */}
           <section className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 sm:p-6">
-            <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-              <div>
-                <h2 className="text-lg font-semibold">
-                  What I Bring
-                </h2>
-
-                <p className="mt-1 text-sm text-gray-500">
-                  Manage the cards shown on the right side of
-                  the About section.
-                </p>
-              </div>
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold">
+                What I Bring
+              </h2>
 
               <button
                 type="button"
-                onClick={addWhatIBring}
-                className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium transition hover:bg-white/10"
+                onClick={handleAddWhatIBring}
+                className="text-xs text-cyan-400 transition hover:underline"
               >
                 + Add Item
               </button>
             </div>
 
-            <div className="mt-5 space-y-5">
+            <div className="mt-5 grid gap-5 sm:grid-cols-2">
               <div>
                 <label className="mb-2 block text-sm text-gray-400">
-                  Heading
+                  Card Title
                 </label>
 
                 <input
@@ -510,13 +726,13 @@ const AdminAbout = () => {
                     )
                   }
                   className="admin-input"
-                  placeholder="What I bring"
+                  placeholder="What I Bring"
                 />
               </div>
 
               <div>
                 <label className="mb-2 block text-sm text-gray-400">
-                  Subtitle
+                  Card Subtitle
                 </label>
 
                 <input
@@ -528,24 +744,26 @@ const AdminAbout = () => {
                     )
                   }
                   className="admin-input"
-                  placeholder="From idea to working product"
+                  placeholder="Capabilities & mindset"
                 />
               </div>
+            </div>
 
+            <div className="mt-6 space-y-4">
               {about.whatIBring.map((item, index) => (
                 <div
                   key={index}
-                  className="rounded-xl border border-white/10 bg-black/20 p-4"
+                  className="rounded-xl border border-white/10 bg-white/[0.02] p-4"
                 >
                   <div className="mb-4 flex items-center justify-between">
-                    <p className="text-sm font-medium text-gray-300">
-                      Item {index + 1}
+                    <p className="text-xs font-semibold text-gray-400">
+                      Item #{index + 1}
                     </p>
 
                     <button
                       type="button"
                       onClick={() =>
-                        removeWhatIBring(index)
+                        handleRemoveWhatIBring(index)
                       }
                       className="text-xs text-gray-500 transition hover:text-red-400"
                     >
@@ -641,6 +859,7 @@ const AdminAbout = () => {
           </div>
         </div>
       </div>
+      <ToastContainer position="bottom-right" theme="dark" />
     </div>
   );
 };

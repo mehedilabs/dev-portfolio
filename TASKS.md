@@ -8,10 +8,10 @@
 - [x] Task A.5: Verify and test Resume Management flow.
 
 ## Feature B: About Me Enhancement
-- [ ] Task B.1: Update `About` backend model with `journey`, `journeyTitle`, `interests`, `interestsTitle`, `hobbies`, `hobbiesTitle` with backward-compatible defaults.
-- [ ] Task B.2: Update `AdminAbout.tsx` to support editing Programming Journey, Professional Interests, and Hobbies.
-- [ ] Task B.3: Update public `About.tsx` to display Programming Journey, Professional Interests, and Hobbies cleanly matching the design system.
-- [ ] Task B.4: Verify and test About Me updates.
+- [x] Task B.1: Update `About` backend model with `journey`, `journeyTitle`, `interests`, `interestsTitle`, `hobbies`, `hobbiesTitle` with backward-compatible defaults.
+- [x] Task B.2: Update `AdminAbout.tsx` to support editing Programming Journey, Professional Interests, and Hobbies.
+- [x] Task B.3: Update public `About.tsx` to display Programming Journey, Professional Interests, and Hobbies cleanly matching the design system.
+- [x] Task B.4: Verify and test About Me updates.
 
 ## Feature C: Project Details Page & Admin Management
 - [ ] Task C.1: Update `Project` backend model with `overview`, `features`, `screenshots`, `contributions`, `challenges`, `solutions`, and `futureImprovements`.

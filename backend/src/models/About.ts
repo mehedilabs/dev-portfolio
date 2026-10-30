@@ -25,6 +25,39 @@ const aboutSchema = new Schema(
       default: [],
     },
 
+    journeyTitle: {
+      type: String,
+      default: "Programming Journey",
+      trim: true,
+    },
+
+    journey: {
+      type: String,
+      default: "",
+    },
+
+    interestsTitle: {
+      type: String,
+      default: "Professional Interests",
+      trim: true,
+    },
+
+    interests: {
+      type: [String],
+      default: [],
+    },
+
+    hobbiesTitle: {
+      type: String,
+      default: "Hobbies & Personal Interests",
+      trim: true,
+    },
+
+    hobbies: {
+      type: [String],
+      default: [],
+    },
+
     techStackLabel: {
       type: String,
       required: true,

@@ -3,8 +3,11 @@ import { motion } from "framer-motion";
 import {
   FiArrowUpRight,
   FiCode,
+  FiCompass,
   FiDatabase,
+  FiHeart,
   FiLayers,
+  FiTarget,
 } from "react-icons/fi";
 
 import API_URL from "../config/api";
@@ -20,6 +23,12 @@ type AboutData = {
   title: string;
   mainHeading: string;
   paragraphs: string[];
+  journeyTitle?: string;
+  journey?: string;
+  interestsTitle?: string;
+  interests?: string[];
+  hobbiesTitle?: string;
+  hobbies?: string[];
   techStackLabel: string;
   techStack: string[];
   ctaText: string;
@@ -38,7 +47,6 @@ type EducationData = {
   degree: string;
   field: string;
 };
-
 
 const About = () => {
   const [about, setAbout] = useState<AboutData | null>(null);
@@ -154,6 +162,21 @@ const About = () => {
               ))}
             </div>
 
+            {/* Programming Journey */}
+            {about.journey && (
+              <div className="mt-6 rounded-2xl border border-cyan-400/20 bg-gradient-to-br from-cyan-950/20 via-black/40 to-white/[0.02] p-5 backdrop-blur-sm">
+                <div className="mb-2 flex items-center gap-2 text-cyan-400">
+                  <FiCompass className="h-4 w-4" />
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-cyan-300">
+                    {about.journeyTitle || "Programming Journey"}
+                  </h4>
+                </div>
+                <p className="text-sm leading-relaxed text-gray-300 whitespace-pre-line">
+                  {about.journey}
+                </p>
+              </div>
+            )}
+
             <div className="mt-6">
               <p className="mb-3 text-[10px] font-medium uppercase tracking-[0.2em] text-gray-600">
                 {about.techStackLabel}
@@ -186,7 +209,7 @@ const About = () => {
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
-            className="space-y-3"
+            className="space-y-4"
           >
             <div className="rounded-2xl border border-white/10 bg-white/[0.025] p-5">
               <div className="mb-4 flex items-center gap-3">
@@ -278,6 +301,50 @@ const About = () => {
                 </div>
               </div>
             </div>
+
+            {/* Professional Interests */}
+            {about.interests && about.interests.length > 0 && (
+              <div className="rounded-2xl border border-white/10 bg-white/[0.025] p-5">
+                <div className="mb-3 flex items-center gap-2">
+                  <FiTarget className="text-cyan-400" size={13} />
+                  <p className="text-[10px] font-semibold uppercase tracking-widest text-cyan-400/90">
+                    {about.interestsTitle || "Professional Interests"}
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {about.interests.map((interest, idx) => (
+                    <span
+                      key={idx}
+                      className="rounded-lg border border-cyan-400/20 bg-cyan-400/5 px-3 py-1 text-xs text-cyan-200 transition hover:bg-cyan-400/10"
+                    >
+                      {interest}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Hobbies & Personal Interests */}
+            {about.hobbies && about.hobbies.length > 0 && (
+              <div className="rounded-2xl border border-white/10 bg-white/[0.025] p-5">
+                <div className="mb-3 flex items-center gap-2">
+                  <FiHeart className="text-violet-400" size={13} />
+                  <p className="text-[10px] font-semibold uppercase tracking-widest text-violet-400/90">
+                    {about.hobbiesTitle || "Hobbies & Personal Interests"}
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {about.hobbies.map((hobby, idx) => (
+                    <span
+                      key={idx}
+                      className="rounded-lg border border-violet-400/20 bg-violet-400/5 px-3 py-1 text-xs text-violet-200 transition hover:bg-violet-400/10"
+                    >
+                      {hobby}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
           </motion.div>
         </div>
       </div>
